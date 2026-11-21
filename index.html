@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>زماني | Zamani — عداد المناسبات الإسلامية والتقويم الدراسي العربي ومصمم البطاقات</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>" />
+
+  <!-- Google Fonts for Arabic, English, Hindi & Classical Calligraphy -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            arabic: ['"Alexandria"', '"Cairo"', 'system-ui', 'sans-serif'],
+            english: ['"Outfit"', '"Inter"', 'system-ui', 'sans-serif'],
+            hindi: ['"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+            amiri: ['"Amiri"', 'serif'],
+            cairo: ['"Cairo"', 'sans-serif'],
+            alexandria: ['"Alexandria"', 'sans-serif']
+          },
+          colors: {
+            sand: {
+              50: '#faf9f6',
+              100: '#f4efe8',
+              800: '#231d18',
+              900: '#171310',
+              950: '#0c0d10'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- React 18 and Babel Standalone for Seamless Zero-Config Execution -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* Smooth Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(150, 150, 150, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(150, 150, 150, 0.45);
+    }
+    .fade-in {
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-[#faf9f6] text-stone-900 dark:bg-[#0c0d10] dark:text-stone-100 antialiased min-h-screen transition-colors duration-300 select-auto">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // --- IMMUTABLE REFERENCE DATA & LOCALIZATION (Object.freeze) ---
+
+    const LOCALES = Object.freeze({
+      ar: Object.freeze({
+        appName: 'زماني',
+        appSubtitle: 'عدّاد المناسبات الإسلامية والتقويم الدراسي العربي ومصمم البطاقات',
+        appTagline: 'نبض الوقت لمناسباتك الإسلامية، تقويمك الأكاديمي، وبطاقات تهانيك الفاخرة',
+        navIslamic: 'المناسبات الإسلامية',
+        navAcademic: 'التقويم الأكاديمي العربي',
+        navStudio: 'أستوديو بطاقات التهنئة',
+        navAllArab: 'جميع الدول العربية الـ 22',
+        days: 'يوم',
+        daysPlural: 'أيام',
+        hours: 'ساعة',
+        minutes: 'دقيقة',
+        seconds: 'ثانية',
+        remaining: 'متبقي',
+        activeNow: 'مستمر الآن',
+        completed: 'اكتملت المناسبة',
+        liveClock: 'الوقت الحالي',
+        gregorian: 'ميلادي',
+        hijri: 'هجري',
+        lightMode: 'نهاري',
+        darkMode: 'ليلي',
+        islamicSectionTitle: 'المناسبات الإسلامية المباركة',
+        islamicSectionDesc: 'عد تنازلي لحظي مباشر لأعظم المواسم الإسلامية بدقة فلكية مع شواهد التقويم الهجري',
+        ramadanTitle: 'شهر رمضان المبارك',
+        ramadanSub: 'شهر الصيام والقرآن والرحمة',
+        eidFitrTitle: 'عيد الفطر السعيد',
+        eidFitrSub: 'بهجة الفطر وجائزة الصيام',
+        eidAdhaTitle: 'عيد الأضحى المبارك',
+        eidAdhaSub: 'يوم النحر وأيام التشريق وبركة الحج',
+        createCardForOccasion: 'صمم بطاقة تهنئة لهذه المناسبة',
+        hadithRamadan: '«إذا جاء رمضان فتحت أبواب الجنة، وغلقت أبواب النار، وصفدت الشياطين»',
+        hadithEidFitr: '«للصائم فرحتان: فرحة عند فطره، وفرحة عند لقاء ربه»',
+        hadithEidAdha: '«ما من أيام أعظم عند الله ولا أحب إليه من العمل فيهن من هذه الأيام العشر»',
+        academicSectionTitle: 'التقويم الأكاديمي والعام في 22 دولة عربية',
+        academicSectionDesc: 'اختر أي دولة عربية لمتابعة العد التنازلي المباشر لنهاية الفصل الدراسي، نهاية العام الدراسي، والتقويم السنوي',
+        selectCountry: 'اختر الدولة العربية:',
+        searchCountry: 'ابحث عن دولة عربية...',
+        filterAll: 'الكل (22 دولة)',
+        filterGulf: 'الخليج العربي',
+        filterNorthAfrica: 'شمال إفريقيا',
+        filterLevant: 'بلاد الشام والعراق',
+        filterNileHorn: 'حوض النيل والقرن الإفريقي',
+        capitalLabel: 'العاصمة:',
+        systemTypeLabel: 'نظام التعليم:',
+        system3Terms: 'نظام الفصول الدراسية الثلاثة',
+        system2Semesters: 'نظام الفصلين الدراسيين (فصل أول / ثان)',
+        endOfCurrentTerm: 'نهاية الفصل الدراسي الحالي',
+        endOfAcademicYear: 'نهاية العام الدراسي (العطلة الصيفية)',
+        endOfGregorianYear: 'نهاية العام الميلادي',
+        endOfHijriYear: 'نهاية العام الهجري',
+        nextTermStarts: 'يبدأ الفصل القادم في:',
+        schoolDaysRemaining: 'أيام الدراسة المتبقية التقريبية',
+        selectedCountryBanner: 'تقويم دولة',
+        studioSectionTitle: 'أستوديو بطاقات ورسائل التهنئة',
+        studioSectionDesc: 'أنشئ بطاقات تهنئة فاخرة بأسماء مخصصة وزخارف إسلامية أصيلة، مع التنزيل الفوري بصيغة PNG والمشاركة المباشرة عبر واتساب',
+        cardOccasionLabel: 'اختر المناسبة:',
+        cardOccasionRamadan: 'رمضان المبارك',
+        cardOccasionEidFitr: 'عيد الفطر السعيد',
+        cardOccasionEidAdha: 'عيد الأضحى المبارك',
+        cardOccasionAcademic: 'النجاح والتفوق والتخرج',
+        cardOccasionNewYear: 'رأس السنة والمناسبات العامة',
+        presetWishesLabel: 'عبارات تهنئة مقترحة:',
+        randomizePreset: 'عبارة عشوائية ✨',
+        senderLabel: 'اسم المرسل (من):',
+        senderPlaceholder: 'اكتب اسمك هنا (مثال: محبكم د. محمد)',
+        recipientLabel: 'اسم المستلم (إلى):',
+        recipientPlaceholder: 'اكتب اسم المستلم (مثال: أخي العزيز أحمد / عائلتي الكريمة)',
+        messageLabel: 'نص التهنئة:',
+        messagePlaceholder: 'اكتب رسالتك الخاصة أو اختر إحدى العبارات المقترحة أعلاه...',
+        themeLabel: 'النمط والتصميم البصري:',
+        themeEmeraldGold: 'الأخضر الملكي والذهب',
+        themeMidnightGold: 'سماء الليل والنجوم',
+        themeGoldSunset: 'وردة الصحراء والعنبر',
+        themeAzurePlatinum: 'أزرق النجاح والأكاديميا',
+        themeMinimalMonochrome: 'الفخامة الهادئة والفضة',
+        fontStyleLabel: 'خط البطاقة:',
+        cardLivePreview: 'معاينة البطاقة المباشرة',
+        cardDownloadPng: 'تحميل كصورة PNG فاخرة',
+        cardShareWhatsApp: 'مشاركة عبر واتساب',
+        cardCopyText: 'نسخ نص الرسالة',
+        cardCopiedToast: 'تم نسخ نص التهنئة بنجاح إلى الحافظة!',
+        cardDownloadingToast: 'جاري تجهيز الصورة وتحميلها بأعلى دقة...',
+        footerNote: 'زماني — منصة عربية دقيقة مخصصة للتقويم الإسلامي، الأكاديمي، والمناسبات الثقافية عبر جميع أرجاء الوطن العربي.',
+        allRightsReserved: 'جميع الحقوق محفوظة'
+      }),
+      en: Object.freeze({
+        appName: 'Zamani',
+        appSubtitle: 'Islamic Milestones, Arab Academic Calendars & Greeting Studio',
+        appTagline: 'Precision timekeeping for sacred Islamic occasions, national Arab academic cycles, and bespoke greeting cards.',
+        navIslamic: 'Islamic Occasions',
+        navAcademic: 'Arab Academic Calendar',
+        navStudio: 'Greeting Card Studio',
+        navAllArab: 'All 22 Arab Countries',
+        days: 'Day',
+        daysPlural: 'Days',
+        hours: 'Hours',
+        minutes: 'Minutes',
+        seconds: 'Seconds',
+        remaining: 'Remaining',
+        activeNow: 'Happening Now',
+        completed: 'Occasion Completed',
+        liveClock: 'Current Time',
+        gregorian: 'Gregorian',
+        hijri: 'Hijri',
+        lightMode: 'Light',
+        darkMode: 'Dark',
+        islamicSectionTitle: 'Sacred Islamic Occasions',
+        islamicSectionDesc: 'Real-time astronomical countdowns for pivotal Islamic milestones with Hijri dates and spiritual reflections',
+        ramadanTitle: 'Holy Month of Ramadan',
+        ramadanSub: 'The Month of Fasting, Quran & Divine Mercy',
+        eidFitrTitle: 'Eid al-Fitr',
+        eidFitrSub: 'The Festival of Breaking the Fast',
+        eidAdhaTitle: 'Eid al-Adha',
+        eidAdhaSub: 'The Festival of Sacrifice & Hajj',
+        createCardForOccasion: 'Create Greeting Card for this Occasion',
+        hadithRamadan: '“When the month of Ramadan begins, the gates of heaven are opened and the gates of Hellfire are closed.”',
+        hadithEidFitr: '“For the fasting person there are two moments of joy: when breaking fast, and when meeting the Lord.”',
+        hadithEidAdha: '“There are no days in which righteous deeds are more beloved to Allah than these ten days.”',
+        academicSectionTitle: 'Academic & Year-End Countdowns Across 22 Arab Nations',
+        academicSectionDesc: 'Select any Arab nation to view live countdowns for academic term ends, school year completions, and calendar transitions',
+        selectCountry: 'Select Country:',
+        searchCountry: 'Search Arab country...',
+        filterAll: 'All (22 Countries)',
+        filterGulf: 'Arabian Gulf',
+        filterNorthAfrica: 'North Africa',
+        filterLevant: 'Levant & Iraq',
+        filterNileHorn: 'Nile Basin & Horn of Africa',
+        capitalLabel: 'Capital:',
+        systemTypeLabel: 'Education Structure:',
+        system3Terms: 'Three-Term System (Trimesters)',
+        system2Semesters: 'Two-Semester System (Semesters 1 & 2)',
+        endOfCurrentTerm: 'End of Current Academic Term',
+        endOfAcademicYear: 'End of Academic Year (Summer Break)',
+        endOfGregorianYear: 'End of Gregorian Year',
+        endOfHijriYear: 'End of Hijri Year',
+        nextTermStarts: 'Next Term Commences:',
+        schoolDaysRemaining: 'Estimated School Days Remaining',
+        selectedCountryBanner: 'National Calendar for',
+        studioSectionTitle: 'Greeting Card & Message Studio',
+        studioSectionDesc: 'Craft exquisite greeting cards with custom recipient and sender names, authentic arabesque motifs, high-res PNG download, and direct WhatsApp sharing',
+        cardOccasionLabel: 'Select Occasion:',
+        cardOccasionRamadan: 'Ramadan Mubarak',
+        cardOccasionEidFitr: 'Eid al-Fitr',
+        cardOccasionEidAdha: 'Eid al-Adha',
+        cardOccasionAcademic: 'Academic Success & Graduation',
+        cardOccasionNewYear: 'New Year & Milestones',
+        presetWishesLabel: 'Suggested Heartfelt Wishes:',
+        randomizePreset: 'Randomize Wish ✨',
+        senderLabel: 'Sender Name (From):',
+        senderPlaceholder: 'Enter your name (e.g. Dr. Mohammed & Family)',
+        recipientLabel: 'Recipient Name (To):',
+        recipientPlaceholder: 'Enter recipient name (e.g. Dearest Sarah / Dear Colleagues)',
+        messageLabel: 'Greeting Message:',
+        messagePlaceholder: 'Write your personalized message or select one of the suggested greetings above...',
+        themeLabel: 'Card Visual Theme:',
+        themeEmeraldGold: 'Royal Emerald & Gold',
+        themeMidnightGold: 'Midnight Sky & Starlight',
+        themeGoldSunset: 'Desert Rose & Amber',
+        themeAzurePlatinum: 'Academic Azure & Platinum',
+        themeMinimalMonochrome: 'Minimalist Luxe & Silver',
+        fontStyleLabel: 'Card Typography:',
+        cardLivePreview: 'Live Card Preview',
+        cardDownloadPng: 'Download High-Res PNG',
+        cardShareWhatsApp: 'Share on WhatsApp',
+        cardCopyText: 'Copy Message Text',
+        cardCopiedToast: 'Greeting message copied to clipboard!',
+        cardDownloadingToast: 'Rendering high-resolution image...',
+        footerNote: 'Zamani — A precision platform for Islamic observances, Arab educational timelines, and cultural celebrations.',
+        allRightsReserved: 'All rights reserved'
+      }),
+      hi: Object.freeze({
+        appName: 'ज़मानी (Zamani)',
+        appSubtitle: 'इस्लामी अवसर, अरब शैक्षणिक कैलेंडर और बधाई कार्ड स्टूडियो',
+        appTagline: 'पवित्र इस्लामी अवसरों, राष्ट्रीय अरब शैक्षणिक सत्रों और सुंदर बधाई संदेशों के लिए आपका साथी।',
+        navIslamic: 'इस्लामी अवसर',
+        navAcademic: 'अरब शैक्षणिक कैलेंडर',
+        navStudio: 'बधाई कार्ड स्टूडियो',
+        navAllArab: 'सभी 22 अरब देश',
+        days: 'दिन',
+        daysPlural: 'दिन',
+        hours: 'घंटे',
+        minutes: 'मिनट',
+        seconds: 'सेकंड',
+        remaining: 'शेष समय',
+        activeNow: 'वर्तमान में जारी',
+        completed: 'अवसर संपन्न हुआ',
+        liveClock: 'वर्तमान समय',
+        gregorian: 'ग्रेगोरियन',
+        hijri: 'हिजरी',
+        lightMode: 'दिन',
+        darkMode: 'रात',
+        islamicSectionTitle: 'पवित्र इस्लामी अवसर',
+        islamicSectionDesc: 'हिजरी तिथियों और आध्यात्मिक महत्व के साथ प्रमुख इस्लामी अवसरों के लिए लाइव उल्टी गिनती',
+        ramadanTitle: 'रमज़ानुल मुबारक',
+        ramadanSub: 'रोज़ा, क़ुरआन और रहमत का पवित्र महीना',
+        eidFitrTitle: 'ईद-उल-फ़ित्र',
+        eidFitrSub: 'रोज़ा पूरा होने की खुशी और ईद का तोहफ़ा',
+        eidAdhaTitle: 'ईद-उल-अज़हा',
+        eidAdhaSub: 'क़ुरबानी का पर्व और हज की बरकत',
+        createCardForOccasion: 'इस अवसर के लिए बधाई कार्ड बनाएं',
+        hadithRamadan: '«जब रमज़ान शुरू होता है, तो जन्नत के दरवाज़े खोल दिए जाते हैं और जहन्नम के दरवाज़े बंद कर दिए जाते हैं।»',
+        hadithEidFitr: '«रोज़ेदार के लिए दो खुशियां हैं: एक इफ़्तार के समय और दूसरी अपने रब से मुलाकात पर।»',
+        hadithEidAdha: '«अल्लाह को इन दस दिनों में किए गए अच्छे कर्मों से बढ़कर कोई दिन अधिक प्रिय नहीं है।»',
+        academicSectionTitle: '22 अरब देशों में शैक्षणिक एवं वार्षिक उल्टी गिनती',
+        academicSectionDesc: 'सत्र समाप्ति, शैक्षणिक वर्ष के अंत और वार्षिक कैलेंडर की लाइव उल्टी गिनती देखने के लिए किसी भी अरब देश का चयन करें',
+        selectCountry: 'देश चुनें:',
+        searchCountry: 'अरब देश खोजें...',
+        filterAll: 'सभी (22 देश)',
+        filterGulf: 'खाड़ी क्षेत्र',
+        filterNorthAfrica: 'उत्तरी अफ्रीका',
+        filterLevant: 'लेवंत और इराक',
+        filterNileHorn: 'नील घाटी और हॉर्न ऑफ अफ्रीका',
+        capitalLabel: 'राजधानी:',
+        systemTypeLabel: 'शिक्षा प्रणाली:',
+        system3Terms: 'त्रि-सत्रीय प्रणाली (3 सत्र)',
+        system2Semesters: 'द्वि-सत्रीय प्रणाली (2 सेमेस्टर)',
+        endOfCurrentTerm: 'वर्तमान शैक्षणिक सत्र का अंत',
+        endOfAcademicYear: 'शैक्षणिक वर्ष का अंत (ग्रीष्मकालीन अवकाश)',
+        endOfGregorianYear: 'ग्रेगोरियन वर्ष का अंत',
+        endOfHijriYear: 'हिजरी वर्ष का अंत',
+        nextTermStarts: 'अगला सत्र प्रारंभ होगा:',
+        schoolDaysRemaining: 'अनुमानित शेष स्कूल दिवस',
+        selectedCountryBanner: 'राष्ट्रीय कैलेंडर:',
+        studioSectionTitle: 'बधाई कार्ड और संदेश स्टूडियो',
+        studioSectionDesc: 'कस्टम नाम, सुंदर डिज़ाइन, एचडी पीएनजी डाउनलोड और सीधे व्हाट्सएप पर साझा करने के साथ आकर्षक कार्ड बनाएं',
+        cardOccasionLabel: 'अवसर चुनें:',
+        cardOccasionRamadan: 'रमज़ान मुबारक',
+        cardOccasionEidFitr: 'ईद-उल-फ़ित्र',
+        cardOccasionEidAdha: 'ईद-उल-अज़हा',
+        cardOccasionAcademic: 'शैक्षणिक सफलता व दीक्षांत',
+        cardOccasionNewYear: 'नव वर्ष और सामान्य अवसर',
+        presetWishesLabel: 'सुझाए गए बधाई संदेश:',
+        randomizePreset: 'रैंडम संदेश ✨',
+        senderLabel: 'भेजने वाले का नाम (From):',
+        senderPlaceholder: 'अपना नाम दर्ज करें (उदा. डॉ. मोहम्मद और परिवार)',
+        recipientLabel: 'पाने वाले का नाम (To):',
+        recipientPlaceholder: 'पाने वाले का नाम लिखें (उदा. प्रिय मित्र / आदरणीय परिवार)',
+        messageLabel: 'बधाई संदेश:',
+        messagePlaceholder: 'अपना व्यक्तिगत संदेश लिखें या ऊपर दिए गए संदेशों में से चुनें...',
+        themeLabel: 'कार्ड विज़ुअल थीम:',
+        themeEmeraldGold: 'शाही पन्ना और सोना',
+        themeMidnightGold: 'मध्यरात्रि और सितारे',
+        themeGoldSunset: 'रेगिस्तानी शाम और अम्बर',
+        themeAzurePlatinum: 'शैक्षणिक नीला और प्लेटिनम',
+        themeMinimalMonochrome: 'सादा विलासिता और रजत',
+        fontStyleLabel: 'फ़ॉन्ट शैली:',
+        cardLivePreview: 'लाइव कार्ड पूर्वावलोकन',
+        cardDownloadPng: 'एचडी पीएनजी डाउनलोड करें',
+        cardShareWhatsApp: 'व्हाट्सएप पर शेयर करें',
+        cardCopyText: 'संदेश कॉपी करें',
+        cardCopiedToast: 'बधाई संदेश क्लिपबोर्ड पर कॉपी हो गया!',
+        cardDownloadingToast: 'उच्च रिज़ॉल्यूशन छवि तैयार हो रही है...',
+        footerNote: 'ज़मानी — इस्लामी धार्मिक अवसरों, अरब शैक्षिक कैलेंडर और सांस्कृतिक आयोजनों के लिए एक सटीक मंच।',
+        allRightsReserved: 'सर्वाधिकार सुरक्षित'
+      })
+    });
+
+    const EASTERN_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const DEVANAGARI_DIGITS = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+
+    function formatNumber(num, lang = 'ar', useEastern = true) {
+      if (num === null || num === undefined) return '';
+      const str = String(num);
+      if (lang === 'ar' && useEastern) {
+        return str.replace(/\d/g, d => EASTERN_DIGITS[d]);
+      }
+      if (lang === 'hi' && useEastern) {
+        return str.replace(/\d/g, d => DEVANAGARI_DIGITS[d]);
+      }
+      return str;
+    }
+
+    // --- ISLAMIC OCCASIONS (Object.freeze) ---
+    const ISLAMIC_OCCASIONS = Object.freeze([
+      {
+        id: 'ramadan',
+        titleKey: 'ramadanTitle',
+        subtitleKey: 'ramadanSub',
+        hijriDayMonth: '1 Ramadan',
+        colorTheme: 'emerald',
+        bgGlow: 'bg-emerald-500/10 dark:bg-emerald-500/5',
+        occurrences: Object.freeze([
+          { hijriYear: 1447, targetDate: '2026-02-18T00:00:00+03:00', endDate: '2026-03-19T23:59:59+03:00' },
+          { hijriYear: 1448, targetDate: '2027-02-08T00:00:00+03:00', endDate: '2027-03-09T23:59:59+03:00' },
+          { hijriYear: 1449, targetDate: '2028-01-28T00:00:00+03:00', endDate: '2028-02-26T23:59:59+03:00' }
+        ])
+      },
+      {
+        id: 'eid_fitr',
+        titleKey: 'eidFitrTitle',
+        subtitleKey: 'eidFitrSub',
+        hijriDayMonth: '1 Shawwal',
+        colorTheme: 'amber',
+        bgGlow: 'bg-amber-500/10 dark:bg-amber-500/5',
+        occurrences: Object.freeze([
+          { hijriYear: 1447, targetDate: '2026-03-20T00:00:00+03:00', endDate: '2026-03-23T23:59:59+03:00' },
+          { hijriYear: 1448, targetDate: '2027-03-09T00:00:00+03:00', endDate: '2027-03-12T23:59:59+03:00' },
+          { hijriYear: 1449, targetDate: '2028-02-27T00:00:00+03:00', endDate: '2028-03-01T23:59:59+03:00' }
+        ])
+      },
+      {
+        id: 'eid_adha',
+        titleKey: 'eidAdhaTitle',
+        subtitleKey: 'eidAdhaSub',
+        hijriDayMonth: '10 Dhul-Hijjah',
+        colorTheme: 'indigo',
+        bgGlow: 'bg-indigo-500/10 dark:bg-indigo-500/5',
+        occurrences: Object.freeze([
+          { hijriYear: 1447, targetDate: '2026-05-27T00:00:00+03:00', endDate: '2026-05-30T23:59:59+03:00' },
+          { hijriYear: 1448, targetDate: '2027-05-16T00:00:00+03:00', endDate: '2027-05-19T23:59:59+03:00' },
+          { hijriYear: 1449, targetDate: '2028-05-05T00:00:00+03:00', endDate: '2028-05-08T23:59:59+03:00' }
+        ])
+      }
+    ]);
+
+    function getNextIslamicOccurrence(occasionId, now = new Date()) {
+      const occ = ISLAMIC_OCCASIONS.find(o => o.id === occasionId);
+      if (!occ) return null;
+      const nowMs = now.getTime();
+      for (const item of occ.occurrences) {
+        const startMs = new Date(item.targetDate).getTime();
+        const endMs = new Date(item.endDate).getTime();
+        if (nowMs >= startMs && nowMs <= endMs) {
+          return { ...item, occasion: occ, isOngoing: true, targetDateObj: new Date(item.endDate) };
+        }
+        if (startMs > nowMs) {
+          return { ...item, occasion: occ, isOngoing: false, targetDateObj: new Date(item.targetDate) };
+        }
+      }
+      const last = occ.occurrences[occ.occurrences.length - 1];
+      return { ...last, occasion: occ, isOngoing: false, targetDateObj: new Date(last.targetDate) };
+    }
+
+    // --- ALL 22 ARAB COUNTRIES & ACADEMIC DATA (Object.freeze) ---
+    const ARAB_COUNTRIES = Object.freeze([
+      { id: 'saudi_arabia', code: 'SA', flag: '🇸🇦', nameAr: 'المملكة العربية السعودية', nameEn: 'Saudi Arabia', nameHi: 'सऊदी अरब', capitalAr: 'الرياض', capitalEn: 'Riyadh', capitalHi: 'रियाद', academicSystem: '3_terms', currentAcademicYear: '2026–2027', termEndDate: '2026-12-17T23:59:59+03:00', termNameAr: 'الفصل الدراسي الأول', yearEndDate: '2027-06-24T23:59:59+03:00' },
+      { id: 'egypt', code: 'EG', flag: '🇪🇬', nameAr: 'جمهورية مصر العربية', nameEn: 'Egypt', nameHi: 'मिस्र', capitalAr: 'القاهرة', capitalEn: 'Cairo', capitalHi: 'काहिरा', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-22T23:59:59+02:00', termNameAr: 'امتحانات الفصل الأول', yearEndDate: '2027-06-05T23:59:59+02:00' },
+      { id: 'uae', code: 'AE', flag: '🇦🇪', nameAr: 'الإمارات العربية المتحدة', nameEn: 'United Arab Emirates', nameHi: 'संयुक्त अरब अमीरात', capitalAr: 'أبوظبي', capitalEn: 'Abu Dhabi', capitalHi: 'अबू धाबी', academicSystem: '3_terms', currentAcademicYear: '2026–2027', termEndDate: '2026-12-11T23:59:59+04:00', termNameAr: 'الفصل الدراسي الأول', yearEndDate: '2027-07-02T23:59:59+04:00' },
+      { id: 'qatar', code: 'QA', flag: '🇶🇦', nameAr: 'دولة قطر', nameEn: 'Qatar', nameHi: 'कतर', capitalAr: 'الدوحة', capitalEn: 'Doha', capitalHi: 'दोहा', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2026-12-24T23:59:59+03:00', termNameAr: 'نهاية الفصل الأول', yearEndDate: '2027-06-18T23:59:59+03:00' },
+      { id: 'kuwait', code: 'KW', flag: '🇰🇼', nameAr: 'دولة الكويت', nameEn: 'Kuwait', nameHi: 'कुवैत', capitalAr: 'مدينة الكويت', capitalEn: 'Kuwait City', capitalHi: 'कुवैत सिटी', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-14T23:59:59+03:00', termNameAr: 'الفترة الدراسية الأولى', yearEndDate: '2027-06-17T23:59:59+03:00' },
+      { id: 'oman', code: 'OM', flag: '🇴🇲', nameAr: 'سلطنة عُمان', nameEn: 'Oman', nameHi: 'ओमान', capitalAr: 'مسقط', capitalEn: 'Muscat', capitalHi: 'मस्कट', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-15T23:59:59+04:00', termNameAr: 'الفصل الدراسي الأول', yearEndDate: '2027-06-10T23:59:59+04:00' },
+      { id: 'bahrain', code: 'BH', flag: '🇧🇭', nameAr: 'مملكة البحرين', nameEn: 'Bahrain', nameHi: 'बहरीन', capitalAr: 'المنامة', capitalEn: 'Manama', capitalHi: 'मनामा', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-21T23:59:59+03:00', termNameAr: 'الفصل الدراسي الأول', yearEndDate: '2027-06-15T23:59:59+03:00' },
+      { id: 'jordan', code: 'JO', flag: '🇯🇴', nameAr: 'المملكة الأردنية الهاشمية', nameEn: 'Jordan', nameHi: 'जॉर्डन', capitalAr: 'عمان', capitalEn: 'Amman', capitalHi: 'अम्मान', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-07T23:59:59+03:00', termNameAr: 'الفصل الدراسي الأول', yearEndDate: '2027-06-25T23:59:59+03:00' },
+      { id: 'iraq', code: 'IQ', flag: '🇮🇶', nameAr: 'جمهورية العراق', nameEn: 'Iraq', nameHi: 'इराक', capitalAr: 'بغداد', capitalEn: 'Baghdad', capitalHi: 'बगदाद', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-30T23:59:59+03:00', termNameAr: 'امتحانات نصف السنة', yearEndDate: '2027-06-08T23:59:59+03:00' },
+      { id: 'morocco', code: 'MA', flag: '🇲🇦', nameAr: 'المملكة المغربية', nameEn: 'Morocco', nameHi: 'मोरक्को', capitalAr: 'الرباط', capitalEn: 'Rabat', capitalHi: 'रबात', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-24T23:59:59+01:00', termNameAr: 'الأسدوس الأول', yearEndDate: '2027-07-06T23:59:59+01:00' },
+      { id: 'algeria', code: 'DZ', flag: '🇩🇿', nameAr: 'الجمهورية الجزائرية', nameEn: 'Algeria', nameHi: 'अल्जीरिया', capitalAr: 'الجزائر العاصمة', capitalEn: 'Algiers', capitalHi: 'अल्जियर्स', academicSystem: '3_terms', currentAcademicYear: '2026–2027', termEndDate: '2026-12-19T23:59:59+01:00', termNameAr: 'الفصل الأول (عطلة الشتاء)', yearEndDate: '2027-07-04T23:59:59+01:00' },
+      { id: 'tunisia', code: 'TN', flag: '🇹🇳', nameAr: 'الجمهورية التونسية', nameEn: 'Tunisia', nameHi: 'ट्यूनिशिया', capitalAr: 'تونس', capitalEn: 'Tunis', capitalHi: 'ट्यूनिस', academicSystem: '3_terms', currentAcademicYear: '2026–2027', termEndDate: '2026-12-20T23:59:59+01:00', termNameAr: 'الثلاثي الأول (عطلة الشتاء)', yearEndDate: '2027-06-30T23:59:59+01:00' },
+      { id: 'palestine', code: 'PS', flag: '🇵🇸', nameAr: 'دولة فلسطين', nameEn: 'Palestine', nameHi: 'फिलिस्तीन', capitalAr: 'القدس الشريف', capitalEn: 'Jerusalem', capitalHi: 'यरूशलेम', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-12T23:59:59+02:00', termNameAr: 'الفصل الدراسي الأول', yearEndDate: '2027-06-12T23:59:59+03:00' },
+      { id: 'lebanon', code: 'LB', flag: '🇱🇧', nameAr: 'الجمهورية اللبنانية', nameEn: 'Lebanon', nameHi: 'लेबनान', capitalAr: 'بيروت', capitalEn: 'Beirut', capitalHi: 'बेरूत', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-15T23:59:59+02:00', termNameAr: 'الفصل الأول (عطلة الشتاء)', yearEndDate: '2027-06-25T23:59:59+03:00' },
+      { id: 'syria', code: 'SY', flag: '🇸🇾', nameAr: 'الجمهورية العربية السورية', nameEn: 'Syria', nameHi: 'सीरिया', capitalAr: 'دمشق', capitalEn: 'Damascus', capitalHi: 'दमिश्क', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-18T23:59:59+03:00', termNameAr: 'امتحانات الفصل الأول', yearEndDate: '2027-06-15T23:59:59+03:00' },
+      { id: 'libya', code: 'LY', flag: '🇱🇾', nameAr: 'دولة ليبيا', nameEn: 'Libya', nameHi: 'लीबिया', capitalAr: 'طرابلس', capitalEn: 'Tripoli', capitalHi: 'त्रिपोली', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-29T23:59:59+02:00', termNameAr: 'الفصل الأول (نصف السنة)', yearEndDate: '2027-06-20T23:59:59+02:00' },
+      { id: 'yemen', code: 'YE', flag: '🇾🇪', nameAr: 'الجمهورية اليمنية', nameEn: 'Yemen', nameHi: 'यमन', capitalAr: 'صنعاء', capitalEn: 'Sanaa', capitalHi: 'साना', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-10T23:59:59+03:00', termNameAr: 'امتحانات الفصل الأول', yearEndDate: '2027-06-03T23:59:59+03:00' },
+      { id: 'sudan', code: 'SD', flag: '🇸🇩', nameAr: 'جمهورية السودان', nameEn: 'Sudan', nameHi: 'सूडान', capitalAr: 'الخرطوم', capitalEn: 'Khartoum', capitalHi: 'खार्तूम', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-20T23:59:59+02:00', termNameAr: 'الدورة الأولى', yearEndDate: '2027-06-15T23:59:59+02:00' },
+      { id: 'mauritania', code: 'MR', flag: '🇲🇷', nameAr: 'الجمهورية الإسلامية الموريتانية', nameEn: 'Mauritania', nameHi: 'मॉरिटानिया', capitalAr: 'نواكشوط', capitalEn: 'Nouakchott', capitalHi: 'नौआकशॉट', academicSystem: '3_terms', currentAcademicYear: '2026–2027', termEndDate: '2026-12-25T23:59:59+00:00', termNameAr: 'الفصل الأول', yearEndDate: '2027-06-28T23:59:59+00:00' },
+      { id: 'somalia', code: 'SO', flag: '🇸🇴', nameAr: 'جمهورية الصومال الفيدرالية', nameEn: 'Somalia', nameHi: 'सोमालिया', capitalAr: 'مقديشو', capitalEn: 'Mogadishu', capitalHi: 'मोगादिशु', academicSystem: '2_semesters', currentAcademicYear: '2026–2027', termEndDate: '2027-01-18T23:59:59+03:00', termNameAr: 'الفصل الأول', yearEndDate: '2027-06-18T23:59:59+03:00' },
+      { id: 'djibouti', code: 'DJ', flag: '🇩🇯', nameAr: 'جمهورية جيبوتي', nameEn: 'Djibouti', nameHi: 'जिबूती', capitalAr: 'جيبوتي', capitalEn: 'Djibouti City', capitalHi: 'जिबूती शहर', academicSystem: '3_terms', currentAcademicYear: '2026–2027', termEndDate: '2026-12-18T23:59:59+03:00', termNameAr: 'الثلاثي الأول', yearEndDate: '2027-06-20T23:59:59+03:00' },
+      { id: 'comoros', code: 'KM', flag: '🇰🇲', nameAr: 'الاتحاد القمري (جزر القمر)', nameEn: 'Comoros', nameHi: 'कोमोरोस', capitalAr: 'موروني', capitalEn: 'Moroni', capitalHi: 'मोरोनी', academicSystem: '3_terms', currentAcademicYear: '2026–2027', termEndDate: '2026-12-22T23:59:59+03:00', termNameAr: 'الفصل الأول', yearEndDate: '2027-06-27T23:59:59+03:00' }
+    ]);
+
+    // --- CARD TEMPLATES & PRESETS (Object.freeze) ---
+    const CARD_OCCASIONS = Object.freeze([
+      {
+        id: 'ramadan',
+        titleKey: 'cardOccasionRamadan',
+        defaultTheme: 'emerald_gold',
+        presets: Object.freeze({
+          ar: ['مبارك عليكم شهر رمضان المبارك، تقبل الله منا ومنكم صالح الأعمال وجعله شهر خير وبركة ورحمة.', 'أعاده الله عليكم باليمن والإيمان والسلامة والإسلام، ورزقكم فيه القبول والمغفرة.', 'رمضان يجمعنا على الخير والمحبة، كل عام وأنتم وعائلتكم الكريمة بألف خير وصحة وسعادة.'],
+          en: ['Wishing you and your family a blessed and peaceful Ramadan. May Allah shower your home with grace and serenity.', 'May this holy month bring you immense joy, spiritual peace, and answered prayers. Ramadan Mubarak!'],
+          hi: ['आपको और आपके परिवार को रमज़ान मुबारक। अल्लाह आपकी सभी इबादतें और दुआएं क़ुबूल फरमाए।', 'यह पवित्र महीना आपके जीवन में शांति, समृद्धि और खुशियां लेकर आए।']
+        })
+      },
+      {
+        id: 'eid_fitr',
+        titleKey: 'cardOccasionEidFitr',
+        defaultTheme: 'gold_sunset',
+        presets: Object.freeze({
+          ar: ['عيد فطر مبارك وسعيد، تقبل الله طاعاتكم وصيامكم، وأتم عليكم بهجة العيد بالمسرات والبركات.', 'كل عام وأنتم بخير، عساكم من عواده، وجعل الله أيامكم كلها أعياداً وأفراحاً دائمة.'],
+          en: ['Eid Mubarak! Wishing you and your loved ones days filled with joy, laughter, and divine blessings.', 'May the joy of Eid al-Fitr warm your heart and bring everlasting peace and prosperity.'],
+          hi: ['ईद-उल-फ़ित्र की बहुत-बहुत मुबारकबाद! आपकी ज़िंदगी में खुशियों की बहार हमेशा बनी रहे।', 'अल्लाह आपकी हर जायज़ दुआ क़ुबूल करे और आपके घर में खुशहाली आए।']
+        })
+      },
+      {
+        id: 'eid_adha',
+        titleKey: 'cardOccasionEidAdha',
+        defaultTheme: 'midnight_gold',
+        presets: Object.freeze({
+          ar: ['عيد أضحى مبارك، تقبل الله منا ومنكم صالح الأعمال والدعوات، وجعل أيامكم عامرة بالخير.', 'عيدكم مبارك، أعاده الله عليكم وعلى الأمة الإسلامية باليمن والبركات والأمن والرخاء.'],
+          en: ['Eid Al-Adha Mubarak! May the spirit of sacrifice and devotion inspire peace and joy in your life.', 'Wishing you a blessed Eid full of divine grace, cherished moments, and heartfelt smiles.'],
+          hi: ['ईद-उल-अज़हा की दिली मुबारकबाद! यह ईद आपके और आपके परिवार के लिए अमन और खुशियां लाए।', 'त्याग और समर्पण का यह पावन पर्व आपके जीवन को सुख और शांति से भर दे।']
+        })
+      },
+      {
+        id: 'academic_success',
+        titleKey: 'cardOccasionAcademic',
+        defaultTheme: 'azure_platinum',
+        presets: Object.freeze({
+          ar: ['ألف مبروك النجاح والتفوق! ثمرة الجد والاجتهاد تتوج اليوم بأبهى المراتب، ومن نجاح إلى نجاح دائم.', 'تهانينا القلبية بمناسبة النجاح الباهر، فخورون بإنجازكم ونسأل الله لكم مستقبلاً زاهراً.'],
+          en: ['Warmest congratulations on your outstanding academic success! Your hard work has paid off.', 'So proud of your great accomplishment! Wishing you brilliant success in all future pursuits.'],
+          hi: ['शानदार शैक्षणिक सफलता पर हार्दिक बधाई! आपकी कड़ी मेहनत का यह खूबसूरत नतीजा है।', 'आपकी इस महान उपलब्धि पर हमें गर्व है। भविष्य के लिए ढेर सारी शुभकामनाएं!']
+        })
+      },
+      {
+        id: 'new_year',
+        titleKey: 'cardOccasionNewYear',
+        defaultTheme: 'minimal_monochrome',
+        presets: Object.freeze({
+          ar: ['كل عام وأنتم بخير بمناسبة حلول العام الجديد، نسأل الله أن يجعله عام خير وتحقيق للأمنيات والسلام.', 'عام جديد يشرق بأمل متجدد وفرص أجمل، دمتم ودامت أيامكم في سعادة وصحة وعافية.'],
+          en: ['Happy New Year! May this coming year be abundant in peace, health, joy, and fulfilled dreams.', 'Wishing you 365 days of good health, growth, triumph, and memorable moments.'],
+          hi: ['नव वर्ष की हार्दिक शुभकामनाएं! नया साल आपके जीवन में सुख, शांति और समृद्धि लेकर आए।', 'आने वाला साल आपके लिए नई उम्मीदें और अपार सफलता लाए।']
+        })
+      }
+    ]);
+
+    const CARD_THEMES = Object.freeze([
+      { id: 'emerald_gold', nameKey: 'themeEmeraldGold', canvasBg: ['#062c1d', '#0b3d29', '#041a11'], canvasGold: '#d4af37', canvasText: '#ffffff', canvasSubtext: '#d1fae5', accentColor: '#10b981' },
+      { id: 'midnight_gold', nameKey: 'themeMidnightGold', canvasBg: ['#090d16', '#101b33', '#05080f'], canvasGold: '#f1c40f', canvasText: '#ffffff', canvasSubtext: '#cbd5e1', accentColor: '#3b82f6' },
+      { id: 'gold_sunset', nameKey: 'themeGoldSunset', canvasBg: ['#2b1008', '#451e11', '#1a0804'], canvasGold: '#fbbf24', canvasText: '#ffffff', canvasSubtext: '#fed7aa', accentColor: '#f59e0b' },
+      { id: 'azure_platinum', nameKey: 'themeAzurePlatinum', canvasBg: ['#08203e', '#0d3461', '#051326'], canvasGold: '#60a5fa', canvasText: '#ffffff', canvasSubtext: '#e2e8f0', accentColor: '#38bdf8' },
+      { id: 'minimal_monochrome', nameKey: 'themeMinimalMonochrome', canvasBg: ['#171717', '#262626', '#0a0a0a'], canvasGold: '#e5e5e5', canvasText: '#ffffff', canvasSubtext: '#a3a3a3', accentColor: '#9ca3af' }
+    ]);
+
+    // --- COUNTDOWN TIME CALCULATOR ---
+    function getTimeDiff(targetDate, now = new Date()) {
+      const targetMs = new Date(targetDate).getTime();
+      const diffMs = targetMs - now.getTime();
+      if (diffMs <= 0) {
+        return { isPast: true, days: 0, hours: 0, minutes: 0, seconds: 0, daysFmt: '00', hoursFmt: '00', minFmt: '00', secFmt: '00' };
+      }
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return {
+        isPast: false,
+        days, hours, minutes, seconds,
+        daysFmt: String(days).padStart(2, '0'),
+        hoursFmt: String(hours).padStart(2, '0'),
+        minFmt: String(minutes).padStart(2, '0'),
+        secFmt: String(seconds).padStart(2, '0')
+      };
+    }
+
+    function formatDateDisplay(dateStr, lang = 'ar') {
+      const d = new Date(dateStr);
+      const locale = lang === 'ar' ? 'ar-EG' : (lang === 'hi' ? 'hi-IN' : 'en-US');
+      try {
+        return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(d);
+      } catch {
+        return dateStr.split('T')[0];
+      }
+    }
+
+    // --- HIGH-RES CANVAS CARD RENDERER ---
+    function drawGreetingCard(canvas, { occasionTitle, recipient, message, sender, theme, lang }) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const width = 1200;
+      const height = 1200;
+      canvas.width = width;
+      canvas.height = height;
+
+      const colors = theme || CARD_THEMES[0];
+
+      // Radial background
+      const grad = ctx.createRadialGradient(width / 2, height / 2, 80, width / 2, height / 2, width * 0.75);
+      grad.addColorStop(0, colors.canvasBg[1]);
+      grad.addColorStop(0.65, colors.canvasBg[0]);
+      grad.addColorStop(1, colors.canvasBg[2]);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Star particles
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      const stars = [[160, 180, 2], [320, 120, 1.5], [880, 140, 2], [1040, 220, 1.5], [190, 960, 1.5], [1010, 990, 2], [600, 110, 2.5]];
+      stars.forEach(([x, y, r]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Double borders
+      const outerMargin = 45;
+      const innerMargin = 60;
+      const gold = colors.canvasGold;
+
+      ctx.strokeStyle = gold;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.5;
+      ctx.strokeRect(outerMargin, outerMargin, width - outerMargin * 2, height - outerMargin * 2);
+
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.85;
+      ctx.strokeRect(innerMargin, innerMargin, width - innerMargin * 2, height - innerMargin * 2);
+
+      // Corner ornaments
+      const corners = [
+        [innerMargin, innerMargin, 1, 1],
+        [width - innerMargin, innerMargin, -1, 1],
+        [innerMargin, height - innerMargin, 1, -1],
+        [width - innerMargin, height - innerMargin, -1, -1]
+      ];
+      ctx.lineWidth = 2.5;
+      corners.forEach(([cx, cy, dx, dy]) => {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.beginPath();
+        ctx.moveTo(dx * 35, 0);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(0, dy * 35);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(dx * 14, dy * 14, 4, 0, Math.PI * 2);
+        ctx.fillStyle = gold;
+        ctx.fill();
+        ctx.restore();
+      });
+
+      ctx.globalAlpha = 1.0;
+
+      // Crescent & Star top
+      const cx = width / 2;
+      const cy = 175;
+      ctx.save();
+      ctx.fillStyle = gold;
+      ctx.beginPath();
+      ctx.arc(cx - 6, cy, 32, -Math.PI / 2, Math.PI / 2, false);
+      ctx.arc(cx + 8, cy, 26, Math.PI / 2, -Math.PI / 2, true);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Occasion Title
+      ctx.textAlign = 'center';
+      ctx.fillStyle = gold;
+      ctx.font = `bold 54px ${lang === 'hi' ? '"Noto Sans Devanagari"' : '"Amiri", "Alexandria", serif'}`;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 10;
+      ctx.fillText(occasionTitle, width / 2, 280);
+
+      // Ornamental Divider
+      ctx.strokeStyle = gold;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(width / 2 - 180, 320);
+      ctx.lineTo(width / 2 - 20, 320);
+      ctx.moveTo(width / 2 + 20, 320);
+      ctx.lineTo(width / 2 + 180, 320);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(width / 2, 320, 5, 0, Math.PI * 2);
+      ctx.fillStyle = gold;
+      ctx.fill();
+
+      // Recipient
+      if (recipient && recipient.trim()) {
+        ctx.font = `500 36px ${lang === 'hi' ? '"Noto Sans Devanagari"' : '"Alexandria", "Cairo", sans-serif'}`;
+        ctx.fillStyle = colors.canvasSubtext;
+        const prefix = lang === 'ar' ? 'إلى: ' : (lang === 'hi' ? 'सेवा में: ' : 'To: ');
+        ctx.fillText(`${prefix}${recipient.trim()}`, width / 2, 400);
+      }
+
+      // Main Message
+      ctx.font = `400 34px ${lang === 'hi' ? '"Noto Sans Devanagari"' : '"Alexandria", "Cairo", sans-serif'}`;
+      ctx.fillStyle = colors.canvasText;
+      const startY = recipient && recipient.trim() ? 470 : 420;
+      const words = (message || '').split(/\s+/);
+      const lines = [];
+      let currentLine = words[0] || '';
+      for (let i = 1; i < words.length; i++) {
+        const test = `${currentLine} ${words[i]}`;
+        if (ctx.measureText(test).width < 860) {
+          currentLine = test;
+        } else {
+          lines.push(currentLine);
+          currentLine = words[i];
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+
+      const lineHeight = 56;
+      lines.forEach((l, idx) => {
+        ctx.fillText(l, width / 2, startY + idx * lineHeight);
+      });
+
+      // Sender
+      if (sender && sender.trim()) {
+        const fromY = Math.max(startY + lines.length * lineHeight + 70, 940);
+        ctx.font = `600 36px ${lang === 'hi' ? '"Noto Sans Devanagari"' : '"Alexandria", "Cairo", sans-serif'}`;
+        ctx.fillStyle = colors.canvasSubtext;
+        const fromPrefix = lang === 'ar' ? 'من: ' : (lang === 'hi' ? 'प्रेषक: ' : 'From: ');
+        ctx.fillText(`${fromPrefix}${sender.trim()}`, width / 2, fromY);
+      }
+
+      // Discreet branding
+      ctx.shadowBlur = 0;
+      ctx.font = '400 20px "Outfit", sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.fillText('زماني • ZAMANI', width / 2, height - 75);
+    }
+
+    // --- REUSABLE TIME BOX COMPONENT ---
+    function CountdownBox({ timeDiff, lang, useEastern, scheme = 'emerald' }) {
+      const t = (k) => LOCALES[lang]?.[k] || LOCALES.ar[k];
+      if (timeDiff.isPast) {
+        return (
+          <div className="py-5 px-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 text-center">
+            <span className="text-emerald-700 dark:text-emerald-300 font-semibold text-sm flex items-center justify-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+              {t('activeNow')}
+            </span>
+          </div>
+        );
+      }
+
+      const items = [
+        { label: timeDiff.days === 1 ? t('days') : t('daysPlural'), val: timeDiff.daysFmt },
+        { label: t('hours'), val: timeDiff.hoursFmt },
+        { label: t('minutes'), val: timeDiff.minFmt },
+        { label: t('seconds'), val: timeDiff.secFmt }
+      ];
+
+      return (
+        <div className="grid grid-cols-4 gap-2 sm:gap-3 w-full">
+          {items.map((it, i) => (
+            <div key={i} className="flex flex-col items-center justify-center rounded-xl p-2.5 sm:p-3 bg-stone-50 dark:bg-stone-800/50 border border-stone-200/70 dark:border-stone-700/60">
+              <span className="font-mono font-bold text-xl sm:text-2xl lg:text-3xl tracking-tight text-stone-900 dark:text-stone-50 select-none">
+                {formatNumber(it.val, lang, useEastern)}
+              </span>
+              <span className="text-[10px] sm:text-xs font-medium text-stone-500 dark:text-stone-400 mt-1 uppercase">
+                {it.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // --- MAIN REACT APPLICATION COMPONENT ---
+    function App() {
+      const [lang, setLang] = useState(() => localStorage.getItem('zamani_lang') || 'ar');
+      const [theme, setTheme] = useState(() => localStorage.getItem('zamani_theme') || 'dark');
+      const [useEastern, setUseEastern] = useState(true);
+      const [activeTab, setActiveTab] = useState('islamic');
+      const [now, setNow] = useState(new Date());
+
+      // Country section states
+      const [selectedCountryId, setSelectedCountryId] = useState('saudi_arabia');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [regionFilter, setRegionFilter] = useState('all');
+      const [yearType, setYearType] = useState('gregorian');
+
+      // Studio states
+      const [studioOccasionId, setStudioOccasionId] = useState('ramadan');
+      const [studioThemeId, setStudioThemeId] = useState('emerald_gold');
+      const [senderName, setSenderName] = useState('');
+      const [recipientName, setRecipientName] = useState('');
+      const [messageText, setMessageText] = useState('');
+      const [toastMsg, setToastMsg] = useState('');
+      const canvasRef = useRef(null);
+
+      const t = (k) => LOCALES[lang]?.[k] || LOCALES.ar[k];
+
+      // Live 1-second clock
+      useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      // RTL / LTR and Theme management
+      useEffect(() => {
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = lang;
+        localStorage.setItem('zamani_lang', lang);
+      }, [lang]);
+
+      useEffect(() => {
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('zamani_theme', theme);
+      }, [theme]);
+
+      // Trigger toast message
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(''), 3500);
+      };
+
+      // Set default message when occasion or lang changes
+      useEffect(() => {
+        const occ = CARD_OCCASIONS.find(o => o.id === studioOccasionId) || CARD_OCCASIONS[0];
+        const presets = occ.presets[lang] || occ.presets.ar;
+        if (presets && presets.length > 0) {
+          setMessageText(presets[0]);
+        }
+        if (occ.defaultTheme) {
+          setStudioThemeId(occ.defaultTheme);
+        }
+      }, [studioOccasionId, lang]);
+
+      // Redraw Canvas whenever studio parameters change
+      useEffect(() => {
+        if (!canvasRef.current) return;
+        const occ = CARD_OCCASIONS.find(o => o.id === studioOccasionId) || CARD_OCCASIONS[0];
+        const th = CARD_THEMES.find(t => t.id === studioThemeId) || CARD_THEMES[0];
+        drawGreetingCard(canvasRef.current, {
+          occasionTitle: t(occ.titleKey),
+          recipient: recipientName,
+          message: messageText,
+          sender: senderName,
+          theme: th,
+          lang
+        });
+      }, [studioOccasionId, studioThemeId, senderName, recipientName, messageText, lang]);
+
+      // Jump from Islamic occasion to studio
+      const jumpToStudio = (occId) => {
+        setStudioOccasionId(occId);
+        setActiveTab('studio');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      // Current formatted dates
+      const currentGregDate = new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : (lang === 'hi' ? 'hi-IN' : 'en-US'), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(now);
+      let currentHijriDate = '';
+      try {
+        currentHijriDate = new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SA-u-ca-islamic-umalqura' : (lang === 'hi' ? 'hi-IN-u-ca-islamic-umalqura' : 'en-US-u-ca-islamic-umalqura'), { day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+      } catch {}
+
+      // Country filtering
+      const GULF = ['SA', 'AE', 'QA', 'KW', 'BH', 'OM'];
+      const NORTH_AFRICA = ['EG', 'DZ', 'MA', 'TN', 'LY', 'MR'];
+      const LEVANT = ['JO', 'PS', 'LB', 'SY', 'IQ'];
+      const NILE_HORN = ['SD', 'SO', 'DJ', 'KM'];
+
+      const filteredCountries = ARAB_COUNTRIES.filter(c => {
+        if (regionFilter === 'gulf' && !GULF.includes(c.code)) return false;
+        if (regionFilter === 'north_africa' && !NORTH_AFRICA.includes(c.code)) return false;
+        if (regionFilter === 'levant' && !LEVANT.includes(c.code)) return false;
+        if (regionFilter === 'nile_horn' && !NILE_HORN.includes(c.code)) return false;
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase().trim();
+        return c.nameAr.toLowerCase().includes(q) || c.nameEn.toLowerCase().includes(q) || c.nameHi.toLowerCase().includes(q) || c.capitalAr.toLowerCase().includes(q);
+      });
+
+      const selectedCountry = ARAB_COUNTRIES.find(c => c.id === selectedCountryId) || ARAB_COUNTRIES[0];
+      const termTimer = getTimeDiff(selectedCountry.termEndDate, now);
+      const yearTimer = getTimeDiff(selectedCountry.yearEndDate, now);
+      const gregorianYearTimer = getTimeDiff(new Date(now.getFullYear(), 11, 31, 23, 59, 59), now);
+      const hijriYearTimer = getTimeDiff(new Date('2027-06-05T23:59:59+03:00'), now);
+
+      // Studio Actions
+      const handleRandomize = () => {
+        const occ = CARD_OCCASIONS.find(o => o.id === studioOccasionId) || CARD_OCCASIONS[0];
+        const presets = occ.presets[lang] || occ.presets.ar;
+        if (!presets.length) return;
+        const pick = presets[Math.floor(Math.random() * presets.length)];
+        setMessageText(pick);
+        showToast('✨ ' + (lang === 'ar' ? 'تم اختيار عبارة جديدة!' : 'New preset loaded!'));
+      };
+
+      const handleDownloadPng = () => {
+        if (!canvasRef.current) return;
+        const link = document.createElement('a');
+        link.download = `zamani-${studioOccasionId}-card.png`;
+        link.href = canvasRef.current.toDataURL('image/png');
+        link.click();
+        showToast(t('cardDownloadingToast'));
+      };
+
+      const handleShareWhatsApp = () => {
+        const occ = CARD_OCCASIONS.find(o => o.id === studioOccasionId) || CARD_OCCASIONS[0];
+        let text = `✨ *${t(occ.titleKey)}* ✨\n\n`;
+        if (recipientName) text += `${lang === 'ar' ? 'إلى:' : 'To:'} ${recipientName}\n\n`;
+        text += `${messageText}\n\n`;
+        if (senderName) text += `${lang === 'ar' ? 'من:' : 'From:'} ${senderName}\n\n`;
+        text += `🌙 زماني | Zamani`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+      };
+
+      const handleCopyText = async () => {
+        const occ = CARD_OCCASIONS.find(o => o.id === studioOccasionId) || CARD_OCCASIONS[0];
+        let text = `✨ ${t(occ.titleKey)} ✨\n\n`;
+        if (recipientName) text += `${lang === 'ar' ? 'إلى:' : 'To:'} ${recipientName}\n\n`;
+        text += `${messageText}\n\n`;
+        if (senderName) text += `${lang === 'ar' ? 'من:' : 'From:'} ${senderName}\n\n`;
+        text += `(زماني • Zamani)`;
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast(t('cardCopiedToast'));
+        } catch {}
+      };
+
+      const ramadanTimer = getTimeDiff('2027-02-08T00:00:00+03:00', now);
+
+      return (
+        <div className="flex flex-col min-h-screen">
+          {/* Toast Notification */}
+          {toastMsg && (
+            <div className="fixed bottom-6 right-6 z-50 animate-bounce">
+              <div className="bg-stone-900 text-white dark:bg-white dark:text-stone-900 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border border-stone-700 dark:border-stone-200">
+                <span>✨</span>
+                <span>{toastMsg}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Header */}
+          <header className="sticky top-0 z-40 backdrop-blur-md bg-[#faf9f6]/90 dark:bg-[#0c0d10]/90 border-b border-stone-200/80 dark:border-stone-800 transition-colors">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-20 gap-4">
+                {/* Logo & Brand */}
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('islamic')}>
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white text-2xl shadow-md select-none">
+                    🌙
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-50">
+                        {t('appName')}
+                      </h1>
+                      <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300">
+                        {lang === 'ar' ? 'مباشر' : (lang === 'hi' ? 'लाइव' : 'LIVE')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 hidden md:block">
+                      {t('appSubtitle')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Header Controls */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* Numeral toggle for AR and HI */}
+                  {(lang === 'ar' || lang === 'hi') && (
+                    <button
+                      type="button"
+                      onClick={() => setUseEastern(!useEastern)}
+                      className="hidden sm:flex px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300"
+                    >
+                      {useEastern ? '١٢٣' : '123'}
+                    </button>
+                  )}
+
+                  {/* Language Switcher Buttons */}
+                  <div className="flex items-center p-1 rounded-xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800">
+                    {[
+                      { code: 'ar', label: 'العربية' },
+                      { code: 'en', label: 'English' },
+                      { code: 'hi', label: 'हिन्दी' }
+                    ].map(item => (
+                      <button
+                        key={item.code}
+                        type="button"
+                        onClick={() => setLang(item.code)}
+                        className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                          lang === item.code
+                            ? 'bg-white dark:bg-stone-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                            : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Dark/Light Mode Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="p-2 sm:p-2.5 rounded-xl border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300"
+                    title={theme === 'dark' ? t('lightMode') : t('darkMode')}
+                  >
+                    {theme === 'dark' ? '☀️' : '🌙'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Navigation & Live Date Bar */}
+              <div className="flex flex-col sm:flex-row items-center justify-between pb-3 pt-1 border-t border-stone-100 dark:border-stone-800 gap-3 text-xs">
+                <div className="flex items-center gap-3 text-stone-500 dark:text-stone-400 overflow-x-auto max-w-full">
+                  <span className="flex items-center gap-1.5 font-medium whitespace-nowrap">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>{currentGregDate}</span>
+                  </span>
+                  {currentHijriDate && (
+                    <>
+                      <span className="opacity-40">•</span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
+                        {currentHijriDate}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <nav className="flex items-center gap-1 sm:gap-2">
+                  {[
+                    { id: 'islamic', label: t('navIslamic') },
+                    { id: 'academic', label: t('navAcademic') },
+                    { id: 'studio', label: t('navStudio') }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                        activeTab === tab.id
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          </header>
+
+          {/* Hero Bar */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4 w-full">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900/20 via-teal-900/10 to-transparent border border-emerald-500/20 p-6 sm:p-8 backdrop-blur-md">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-2xl">
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                    {lang === 'ar' ? 'المنصة العربية الموحدة للمناسبات' : (lang === 'hi' ? 'एकीकृत अरब मंच' : 'Unified Arab Milestones Platform')}
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-stone-900 dark:text-stone-50">
+                    {t('appTagline')}
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-4 bg-white/70 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-3.5 sm:p-4 shadow-sm self-stretch md:self-auto">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl">
+                    🌙
+                  </div>
+                  <div>
+                    <div className="text-xs text-stone-500 dark:text-stone-400 font-medium">
+                      {t('ramadanTitle')}
+                    </div>
+                    <div className="text-lg sm:text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
+                      {formatNumber(ramadanTimer.days, lang, useEastern)} <span className="text-xs font-normal text-stone-500">{t('days')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Body */}
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-12">
+            {/* TAB 1: ISLAMIC OCCASIONS */}
+            {activeTab === 'islamic' && (
+              <section className="fade-in space-y-8">
+                <div className="text-center max-w-3xl mx-auto space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
+                    <span>🌙</span>
+                    <span>{t('islamicSectionTitle')}</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-50">
+                    {t('islamicSectionTitle')}
+                  </h2>
+                  <p className="text-sm sm:text-base text-stone-600 dark:text-stone-400">
+                    {t('islamicSectionDesc')}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {ISLAMIC_OCCASIONS.map(occ => {
+                    const item = getNextIslamicOccurrence(occ.id, now);
+                    const diff = getTimeDiff(item.targetDateObj, now);
+                    const hadith = occ.id === 'ramadan' ? t('hadithRamadan') : (occ.id === 'eid_fitr' ? t('hadithEidFitr') : t('hadithEidAdha'));
+
+                    return (
+                      <div key={occ.id} className="relative rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white/70 dark:bg-stone-900/60 p-6 sm:p-7 shadow-sm hover:shadow-md transition-all flex flex-col justify-between backdrop-blur-sm">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-3xl">{occ.id === 'ramadan' ? '🌙' : (occ.id === 'eid_fitr' ? '✨' : '☀️')}</span>
+                            <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
+                              {occ.hijriDayMonth} ({item.hijriYear} {lang === 'ar' ? 'هـ' : 'AH'})
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-stone-50">
+                              {t(occ.titleKey)}
+                            </h3>
+                            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                              {t(occ.subtitleKey)}
+                            </p>
+                          </div>
+                          <div className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-2 font-medium">
+                            <span>📅</span>
+                            <span>{formatDateDisplay(item.targetDate, lang)}</span>
+                          </div>
+                        </div>
+
+                        <div className="my-6">
+                          <CountdownBox timeDiff={diff} lang={lang} useEastern={useEastern} scheme={occ.colorTheme} />
+                        </div>
+
+                        <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-stone-800 text-xs italic text-stone-600 dark:text-stone-300 leading-relaxed">
+                          {hadith}
+                        </div>
+
+                        <div className="pt-5 mt-2 border-t border-stone-100 dark:border-stone-800">
+                          <button
+                            type="button"
+                            onClick={() => jumpToStudio(occ.id)}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-stone-900 hover:bg-stone-800 text-white dark:bg-stone-100 dark:hover:bg-white dark:text-stone-900 shadow-sm"
+                          >
+                            <span>🎨</span>
+                            <span>{t('createCardForOccasion')}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* TAB 2: ARAB COUNTRIES & ACADEMIC */}
+            {activeTab === 'academic' && (
+              <section className="fade-in space-y-8">
+                <div className="text-center max-w-3xl mx-auto space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 text-xs font-semibold">
+                    <span>📚</span>
+                    <span>{t('navAllArab')}</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-50">
+                    {t('academicSectionTitle')}
+                  </h2>
+                  <p className="text-sm sm:text-base text-stone-600 dark:text-stone-400">
+                    {t('academicSectionDesc')}
+                  </p>
+                </div>
+
+                {/* Country Filter Box */}
+                <div className="bg-white/80 dark:bg-stone-900/70 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-4 sm:p-6 shadow-sm space-y-4 backdrop-blur-sm">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="relative w-full md:w-72">
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder={t('searchCountry')}
+                        className="w-full px-9 py-2 text-sm rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      />
+                      <span className="absolute left-3 top-2.5 rtl:left-auto rtl:right-3 text-stone-400">🔍</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 md:pb-0 text-xs font-medium">
+                      {[
+                        { id: 'all', label: t('filterAll') },
+                        { id: 'gulf', label: t('filterGulf') },
+                        { id: 'north_africa', label: t('filterNorthAfrica') },
+                        { id: 'levant', label: t('filterLevant') },
+                        { id: 'nile_horn', label: t('filterNileHorn') }
+                      ].map(rf => (
+                        <button
+                          key={rf.id}
+                          type="button"
+                          onClick={() => setRegionFilter(rf.id)}
+                          className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all ${
+                            regionFilter === rf.id
+                              ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 font-semibold shadow-sm'
+                              : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                          }`}
+                        >
+                          {rf.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 22 Countries Pills Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 pt-2 max-h-56 overflow-y-auto pr-1">
+                    {filteredCountries.map(c => {
+                      const isSelected = c.id === selectedCountryId;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setSelectedCountryId(c.id)}
+                          className={`flex items-center gap-2 p-2 rounded-xl text-xs sm:text-sm font-medium transition-all text-start border ${
+                            isSelected
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-semibold shadow-sm'
+                              : 'bg-stone-50/80 dark:bg-stone-800/50 border-stone-200/60 dark:border-stone-800 text-stone-700 dark:text-stone-300'
+                          }`}
+                        >
+                          <span className="text-xl select-none">{c.flag}</span>
+                          <span className="truncate">{lang === 'hi' ? c.nameHi : (lang === 'en' ? c.nameEn : c.nameAr)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Country Hero Header */}
+                <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 backdrop-blur-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 flex items-center justify-center text-4xl shadow-sm">
+                      {selectedCountry.flag}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300">
+                          {selectedCountry.code}
+                        </span>
+                        <span className="text-xs text-stone-500 dark:text-stone-400">
+                          {t('capitalLabel')} <strong className="text-stone-700 dark:text-stone-200">{lang === 'hi' ? selectedCountry.capitalHi : (lang === 'en' ? selectedCountry.capitalEn : selectedCountry.capitalAr)}</strong>
+                        </span>
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-50 mt-1">
+                        {lang === 'hi' ? selectedCountry.nameHi : (lang === 'en' ? selectedCountry.nameEn : selectedCountry.nameAr)}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1 flex items-center gap-2">
+                        <span>{t('systemTypeLabel')}</span>
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                          {selectedCountry.academicSystem === '3_terms' ? t('system3Terms') : t('system2Semesters')}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right rtl:text-left self-end md:self-center">
+                    <div className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wider font-semibold">
+                      {t('selectedCountryBanner')}
+                    </div>
+                    <div className="text-lg font-bold text-stone-900 dark:text-stone-100">
+                      {selectedCountry.currentAcademicYear}
+                    </div>
+                  </div>
+                </div>
+
+                {/* The 3 Core Live Countdowns for Selected Country */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Card 1: End of Current Term */}
+                  <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900/60 p-6 sm:p-7 shadow-sm flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl">⏳</span>
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
+                          {selectedCountry.termNameAr}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-50">
+                          {t('endOfCurrentTerm')}
+                        </h4>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                          {selectedCountry.termNameAr}
+                        </p>
+                      </div>
+                      <div className="text-xs text-stone-600 dark:text-stone-300 font-medium flex items-center gap-2">
+                        <span>📅</span>
+                        <span>{formatDateDisplay(selectedCountry.termEndDate, lang)}</span>
+                      </div>
+                    </div>
+
+                    <div className="my-4">
+                      <CountdownBox timeDiff={termTimer} lang={lang} useEastern={useEastern} scheme="indigo" />
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400">
+                      <span>{t('nextTermStarts')} <strong>2027-01-04</strong></span>
+                    </div>
+                  </div>
+
+                  {/* Card 2: End of Academic Year */}
+                  <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900/60 p-6 sm:p-7 shadow-sm flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl">🎓</span>
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
+                          {selectedCountry.currentAcademicYear}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-50">
+                          {t('endOfAcademicYear')}
+                        </h4>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                          {lang === 'ar' ? 'العطلة الصيفية ونهاية العام الدراسي' : 'Summer Break & Year End'}
+                        </p>
+                      </div>
+                      <div className="text-xs text-stone-600 dark:text-stone-300 font-medium flex items-center gap-2">
+                        <span>📅</span>
+                        <span>{formatDateDisplay(selectedCountry.yearEndDate, lang)}</span>
+                      </div>
+                    </div>
+
+                    <div className="my-4">
+                      <CountdownBox timeDiff={yearTimer} lang={lang} useEastern={useEastern} scheme="emerald" />
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between">
+                      <span>{t('schoolDaysRemaining')}:</span>
+                      <strong className="text-emerald-700 dark:text-emerald-400">
+                        ~{formatNumber(Math.round(yearTimer.days * 0.71), lang, useEastern)} {t('days')}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Card 3: End of Year (Gregorian / Hijri) */}
+                  <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900/60 p-6 sm:p-7 shadow-sm flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl">🎆</span>
+                        <div className="flex items-center p-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setYearType('gregorian')}
+                            className={`px-2 py-1 rounded-md font-medium transition-all ${
+                              yearType === 'gregorian' ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm' : 'text-stone-500'
+                            }`}
+                          >
+                            {t('gregorian')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setYearType('hijri')}
+                            className={`px-2 py-1 rounded-md font-medium transition-all ${
+                              yearType === 'hijri' ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm' : 'text-stone-500'
+                            }`}
+                          >
+                            {t('hijri')}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-50">
+                          {yearType === 'gregorian' ? t('endOfGregorianYear') : t('endOfHijriYear')}
+                        </h4>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                          {yearType === 'gregorian' ? `31 ديسمبر ${now.getFullYear()}` : '29 ذو الحجة 1448 هـ'}
+                        </p>
+                      </div>
+                      <div className="text-xs text-stone-600 dark:text-stone-300 font-medium flex items-center gap-2">
+                        <span>📅</span>
+                        <span>{formatDateDisplay(yearType === 'gregorian' ? `${now.getFullYear()}-12-31T23:59:59` : '2027-06-05T23:59:59', lang)}</span>
+                      </div>
+                    </div>
+
+                    <div className="my-4">
+                      <CountdownBox timeDiff={yearType === 'gregorian' ? gregorianYearTimer : hijriYearTimer} lang={lang} useEastern={useEastern} scheme="amber" />
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400">
+                      <span>{yearType === 'gregorian' ? 'الاحتفال برأس السنة الميلادية الجديدة' : 'حلول العام الهجري الجديد وغرة محرم'}</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* TAB 3: GREETING CARD & MESSAGE STUDIO */}
+            {activeTab === 'studio' && (
+              <section className="fade-in space-y-8">
+                <div className="text-center max-w-3xl mx-auto space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-semibold">
+                    <span>🎨</span>
+                    <span>{t('navStudio')}</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-50">
+                    {t('studioSectionTitle')}
+                  </h2>
+                  <p className="text-sm sm:text-base text-stone-600 dark:text-stone-400">
+                    {t('studioSectionDesc')}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  {/* Studio Controls */}
+                  <div className="lg:col-span-7 bg-white dark:bg-stone-900/70 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm backdrop-blur-sm">
+                    {/* Occasion buttons */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                        {t('cardOccasionLabel')}
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {CARD_OCCASIONS.map(occ => (
+                          <button
+                            key={occ.id}
+                            type="button"
+                            onClick={() => setStudioOccasionId(occ.id)}
+                            className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-start flex items-center gap-2 ${
+                              studioOccasionId === occ.id
+                                ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-sm'
+                                : 'bg-stone-50 dark:bg-stone-800 border-stone-200/60 dark:border-stone-700 text-stone-700 dark:text-stone-300'
+                            }`}
+                          >
+                            <span>{occ.id === 'ramadan' ? '🌙' : (occ.id === 'eid_fitr' ? '✨' : (occ.id === 'eid_adha' ? '☀️' : (occ.id === 'academic_success' ? '🎓' : '🎆')))}</span>
+                            <span className="truncate">{t(occ.titleKey)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Preset Wishes */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                          {t('presetWishesLabel')}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleRandomize}
+                          className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-semibold"
+                        >
+                          {t('randomizePreset')}
+                        </button>
+                      </div>
+                      <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                        {(CARD_OCCASIONS.find(o => o.id === studioOccasionId)?.presets[lang] || []).map((p, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => setMessageText(p)}
+                            className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                              messageText === p
+                                ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/40 text-stone-900 dark:text-stone-100 font-medium'
+                                : 'border-stone-200/60 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-800/40 text-stone-600 dark:text-stone-400'
+                            }`}
+                          >
+                            “{p}”
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Names */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1">
+                          {t('recipientLabel')}
+                        </label>
+                        <input
+                          type="text"
+                          value={recipientName}
+                          onChange={e => setRecipientName(e.target.value)}
+                          placeholder={t('recipientPlaceholder')}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1">
+                          {t('senderLabel')}
+                        </label>
+                        <input
+                          type="text"
+                          value={senderName}
+                          onChange={e => setSenderName(e.target.value)}
+                          placeholder={t('senderPlaceholder')}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Message Textarea */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                          {t('messageLabel')}
+                        </label>
+                        <span className="text-[11px] text-stone-400">{messageText.length} / 280</span>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={messageText}
+                        onChange={e => setMessageText(e.target.value)}
+                        placeholder={t('messagePlaceholder')}
+                        maxLength={280}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none font-arabic"
+                      />
+                    </div>
+
+                    {/* Themes */}
+                    <div className="space-y-2 pt-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                        {t('themeLabel')}
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {CARD_THEMES.map(th => (
+                          <button
+                            key={th.id}
+                            type="button"
+                            onClick={() => setStudioThemeId(th.id)}
+                            className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-medium border transition-all ${
+                              studioThemeId === th.id
+                                ? 'border-amber-500 bg-stone-100 dark:bg-stone-800 font-semibold'
+                                : 'border-stone-200/60 dark:border-stone-800 text-stone-600 dark:text-stone-400'
+                            }`}
+                          >
+                            <span>{t(th.nameKey)}</span>
+                            <span className="w-4 h-4 rounded-full border border-black/20" style={{ backgroundColor: th.canvasBg[0] }} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Live Preview & Actions */}
+                  <div className="lg:col-span-5 space-y-4">
+                    <div className="bg-white dark:bg-stone-900/70 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm backdrop-blur-sm space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                          {t('cardLivePreview')}
+                        </span>
+                        <span className="text-[11px] text-stone-400">1200 × 1200 HD</span>
+                      </div>
+
+                      <div className="relative w-full aspect-square rounded-2xl overflow-hidden shadow-xl border border-stone-800/30 bg-stone-950 flex items-center justify-center">
+                        <canvas ref={canvasRef} className="w-full h-full object-contain block" />
+                      </div>
+
+                      <div className="space-y-2.5 pt-2">
+                        <button
+                          type="button"
+                          onClick={handleDownloadPng}
+                          className="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 shadow-md flex items-center justify-center gap-2 transition-all"
+                        >
+                          <span>💾</span>
+                          <span>{t('cardDownloadPng')}</span>
+                        </button>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={handleShareWhatsApp}
+                            className="py-2.5 px-3 rounded-xl font-medium text-xs sm:text-sm bg-[#25D366] hover:bg-[#20ba59] text-white flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                          >
+                            <span>💬</span>
+                            <span>{t('cardShareWhatsApp')}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCopyText}
+                            className="py-2.5 px-3 rounded-xl font-medium text-xs sm:text-sm bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700 flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <span>📋</span>
+                            <span>{t('cardCopyText')}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+          </main>
+
+          {/* Footer */}
+          <footer className="mt-20 border-t border-stone-200/80 dark:border-stone-800 bg-white/40 dark:bg-stone-950/40 backdrop-blur-sm py-12 transition-colors">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-start">
+                <div className="space-y-2 max-w-md">
+                  <div className="flex items-center justify-center md:justify-start gap-2.5">
+                    <span className="text-2xl">🌙</span>
+                    <span className="text-xl font-bold text-stone-900 dark:text-stone-100">
+                      {t('appName')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                    {t('footerNote')}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-stone-600 dark:text-stone-400">
+                  <button type="button" onClick={() => { setActiveTab('islamic'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-emerald-600">
+                    {t('navIslamic')}
+                  </button>
+                  <span>•</span>
+                  <button type="button" onClick={() => { setActiveTab('academic'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-emerald-600">
+                    {t('navAcademic')}
+                  </button>
+                  <span>•</span>
+                  <button type="button" onClick={() => { setActiveTab('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-emerald-600">
+                    {t('navStudio')}
+                  </button>
+                </div>
+
+                <div className="text-xs text-stone-400 dark:text-stone-500 space-y-1 md:text-end">
+                  <div>
+                    © {now.getFullYear()} {t('appName')}. {t('allRightsReserved')}.
+                  </div>
+                  <div className="text-[11px] opacity-75">
+                    {Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
